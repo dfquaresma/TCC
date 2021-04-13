@@ -1,4 +1,4 @@
-package thumbnailator;
+package example;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -19,12 +19,11 @@ import java.io.InputStream;
 import java.awt.image.ColorModel;
 import javax.imageio.ImageIO;
 
-public class Handler implements RequestHandler<Map<String,String>, String>{
+public class Hello implements RequestHandler<Map<String,String>, String>{
     static boolean exit; 
     static double scale;
     static BufferedImage image;
     static byte[] binaryImage;
-    private int reqCount;
 
     static {
         try {
