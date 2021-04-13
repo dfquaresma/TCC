@@ -9,12 +9,16 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 var (
 	expId       = flag.String("exp_id", "test", "Experiment's ID, default value is test")
 	target      = flag.String("target", "", "function's ip and port separated as host:port. There's no default value and should not start with http")
 	nReqs       = flag.Int64("nreqs", 10, "number of requests, default 10000")
+	lambda      = flag.Float64("lambda", 0.0, "Poisson's lambda value. Lambda 0 means sequential workload, default 0")
 	resultsPath = flag.String("results_path", "", "absolute path for save results made. It has no default value")
 )
 
@@ -29,8 +33,14 @@ func main() {
 	output[0] = fmt.Sprintf("id,status,response_time,body,tsbefore,tsafter")
 
 	fmt.Println("RUNNING WORKLOAD...")
-	if err := sequentialWorkload(*target, *nReqs, output); err != nil {
-		log.Fatal(err)
+	if *lambda == 0 {
+		if err := sequentialWorkload(*target, *nReqs, output); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		if err := poissonWorkload(*target, *nReqs, *lambda, output); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	fmt.Println("SAVING RESULTS...")
@@ -59,6 +69,43 @@ func checkWorkloadFlags() error {
 
 func sequentialWorkload(target string, nReqs int64, output []string) error {
 	for i := int64(1); i <= nReqs; i++ {
+		status, responseTime, body, tsbefore, tsafter, err := sendReq(target)
+		if err != nil {
+			return err
+		}
+
+		output[i] = fmt.Sprintf("%d,%d,%d,%s,%d,%d", i, status, responseTime, body, tsbefore, tsafter)
+		if status != 200 {
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+	return nil
+}
+
+type poissonInterArrival struct {
+	p *distuv.Poisson
+}
+
+func (pia *poissonInterArrival) next() float64 {
+	return pia.p.Rand()
+}
+
+type InterArrival interface {
+	next() float64
+}
+
+func NewPoissonInterArrival(lambda float64) InterArrival {
+	return &poissonInterArrival{
+		&distuv.Poisson{
+			Lambda: lambda,
+			Src:    rand.NewSource(uint64(time.Now().Nanosecond())),
+		}}
+}
+
+func poissonWorkload(target string, nReqs int64, lambda float64, output []string) error {
+	p := NewPoissonInterArrival(lambda)
+	for i := int64(1); i <= nReqs; i++ {
+		time.Sleep(time.Duration(p.next()) * time.Millisecond)
 		status, responseTime, body, tsbefore, tsafter, err := sendReq(target)
 		if err != nil {
 			return err
