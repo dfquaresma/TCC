@@ -1,8 +1,14 @@
-package example;
+// https://finalexception.blogspot.com/2020/01/aws-api-gateway-e-lambda-parte-1.html
+package com.thumbnailator;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
+import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.google.gson.JsonObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -19,7 +25,7 @@ import java.io.InputStream;
 import java.awt.image.ColorModel;
 import javax.imageio.ImageIO;
 
-public class Hello implements RequestHandler<Map<String,String>, String>{
+public class Handler implements RequestStreamHandler {
     static boolean exit; 
     static double scale;
     static BufferedImage image;
@@ -58,11 +64,15 @@ public class Hello implements RequestHandler<Map<String,String>, String>{
         }
     }
 
-    public String handleRequest(Map<String,String> event, Context context)
+    public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException
     {
         if (exit) {
             System.exit(1);
         }
+
+        //API para manipulacao de JSONs
+        JsonObject responseJson = new JsonObject();
+        JsonObject responseBody = new JsonObject();
 
         long before = System.nanoTime();
         String err = callFunction();
@@ -72,12 +82,20 @@ public class Hello implements RequestHandler<Map<String,String>, String>{
         if (err.length() == 0) {
             long serviceTime = ((long) (after - before)); // service time in nanoseconds
             output = Long.toString(serviceTime);
+            responseJson.addProperty("statusCode", 200);
         } else {
-            // do nothing yet, but should somehow return 503
+            responseJson.addProperty("statusCode", 503);
         }
 
+        //propriedade mensagem na resposta
         String response = new String(output);
-        return response;
+        responseBody.addProperty("message", response);
+        responseJson.addProperty("body", responseBody.toString());
+
+        // serializa o JSON para um OutputStream
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+        writer.write(responseJson.toString());
+        writer.close();
     }
 
     public String callFunction() {
