@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -74,6 +75,11 @@ func sequentialWorkload(target string, nReqs int64, output []string) error {
 			return err
 		}
 
+		body, err = getValueFromBodyMessage(body)
+		if err != nil {
+			return err
+		}
+
 		output[i] = fmt.Sprintf("%d,%d,%d,%s,%d,%d", i, status, responseTime, body, tsbefore, tsafter)
 		if status != 200 {
 			time.Sleep(10 * time.Millisecond)
@@ -111,12 +117,27 @@ func poissonWorkload(target string, nReqs int64, lambda float64, output []string
 			return err
 		}
 
+		body, err = getValueFromBodyMessage(body)
+		if err != nil {
+			return err
+		}
+
 		output[i] = fmt.Sprintf("%d,%d,%d,%s,%d,%d", i, status, responseTime, body, tsbefore, tsafter)
 		if status != 200 {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
 	return nil
+}
+
+func getValueFromBodyMessage(body string) (string, error) {
+	var bodyMapped map[string]interface{}
+	err := json.Unmarshal([]byte(body), &bodyMapped)
+	if err != nil {
+		return "", fmt.Errorf("Couldn't execute unmarshal of body (%s), error (%v)", body, err.Error())
+	}
+	msg := bodyMapped["message"].(string)
+	return msg, nil
 }
 
 func sendReq(target string) (int, int64, string, int64, int64, error) {
