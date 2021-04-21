@@ -1,0 +1,21 @@
+---
+title: "Simulator Validation (TCC)"
+author: "David Ferreira Quaresma (david.quaresma@ccc.ufcg.edu.br)"
+date: "april, 2021"
+output: pdf_document
+---
+
+# LOAD DATA
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+result_path = "../results/"
+
+read.al <- function(path) {
+  df <- read.csv(path, sep=",",header=T, dec=".")
+  return (df)
+}
+piloto = read.al(paste(result_path, "piloto.csv", sep=""))
+
+mean(piloto$response_time)
+median(piloto$response_time)
+sd(piloto$response_time)
+```
