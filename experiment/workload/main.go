@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -110,23 +111,38 @@ func NewPoissonInterArrival(lambda float64) InterArrival {
 
 func poissonWorkload(target string, nReqs int64, lambda float64, output []string) error {
 	p := NewPoissonInterArrival(lambda)
+	var wg sync.WaitGroup
+	ch := make(chan string, nReqs+1)
 	for i := int64(1); i <= nReqs; i++ {
-		time.Sleep(time.Duration(p.next()) * time.Millisecond)
-		status, responseTime, body, tsbefore, tsafter, err := sendReq(target)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		ia := p.next()
+		time.Sleep(time.Duration(ia) * time.Millisecond)
+		go func(id int64, wg *sync.WaitGroup, ch chan string) {
+			defer wg.Done()
 
-		body, err = getValueFromBodyMessage(body)
-		if err != nil {
-			return err
-		}
+			status, responseTime, body, tsbefore, tsafter, err := sendReq(target)
+			if err != nil {
+				panic(err)
+			}
+			body, err = getValueFromBodyMessage(body)
+			if err != nil {
+				panic(err)
+			}
 
-		output[i] = fmt.Sprintf("%d,%d,%d,%s,%d,%d", i, status, responseTime, body, tsbefore, tsafter)
-		if status != 200 {
-			time.Sleep(10 * time.Millisecond)
-		}
+			ch <- fmt.Sprintf("%d,%d,%d,%s,%d,%d", id, status, responseTime, body, tsbefore, tsafter)
+
+			if status != 200 {
+				time.Sleep(10 * time.Millisecond)
+			}
+
+		}(i, &wg, ch)
 	}
+	wg.Wait()
+	chLen := len(ch)
+	for i := 1; i <= chLen; i++ {
+		output[i] = <-ch
+	}
+	close(ch)
 	return nil
 }
 
