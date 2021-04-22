@@ -20,23 +20,8 @@ piloto1$service_time = (piloto$tsafter - piloto$tsbefore) / 1000000
 require(dplyr) 
 no_cold_start_all = filter(
   rbind(
-    read.al(paste(result_path, "input01.csv", sep="")),
-    read.al(paste(result_path, "input02.csv", sep="")),
-    read.al(paste(result_path, "input03.csv", sep="")),
-    read.al(paste(result_path, "input04.csv", sep="")),
-    read.al(paste(result_path, "input05.csv", sep="")),
-    read.al(paste(result_path, "input06.csv", sep="")),
-    read.al(paste(result_path, "input07.csv", sep="")),
-    read.al(paste(result_path, "input08.csv", sep="")),
-    read.al(paste(result_path, "input09.csv", sep="")),
-    read.al(paste(result_path, "input10.csv", sep="")),
-    read.al(paste(result_path, "input11.csv", sep="")),
-    read.al(paste(result_path, "input12.csv", sep="")),
-    read.al(paste(result_path, "input13.csv", sep="")),
-    read.al(paste(result_path, "input14.csv", sep="")),
-    read.al(paste(result_path, "input15.csv", sep="")),
-    read.al(paste(result_path, "input16.csv", sep=""))
-    ), id != 1)
+    read.al(paste(result_path, "measurement01.csv", sep=""))
+    ), id != 0)
 
 mean(no_cold_start_all$response_time) / 1000000
 ```
