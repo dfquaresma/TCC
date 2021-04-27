@@ -8,20 +8,71 @@ output: pdf_document
 # LOAD DATA
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 result_path = "../results/"
-
+require(dplyr) 
 read.al <- function(path) {
   df <- read.csv(path, sep=",",header=T, dec=".")
   return (df)
 }
-piloto1 = read.al(paste(result_path, "piloto1.csv", sep=""))
-piloto1$response_time = piloto$response_time / 1000000
-piloto1$service_time = (piloto$tsafter - piloto$tsbefore) / 1000000
+measurement01 = head(read.al(paste(result_path, "measurements/measurement01.csv", sep="")), 15000)
+measurement01$response_time = measurement01$response_time / 1000000
+measurement01$service_time = (measurement01$tsafter - measurement01$tsbefore) / 1000000
 
-require(dplyr) 
-no_cold_start_all = filter(
-  rbind(
-    read.al(paste(result_path, "measurement01.csv", sep=""))
-    ), id != 0)
+simulationt01 = head(read.al(paste(result_path, "simulation/sim-lambda200-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")), 15000)
+simulationt01$response_time = simulationt01$response_time * 1000
 
-mean(no_cold_start_all$response_time) / 1000000
+
+inputs = rbind(
+  read.al(paste(result_path, "measurements/input01.csv", sep="")),
+  read.al(paste(result_path, "measurements/input02.csv", sep="")),
+  read.al(paste(result_path, "measurements/input03.csv", sep="")),
+  read.al(paste(result_path, "measurements/input04.csv", sep="")),
+  read.al(paste(result_path, "measurements/input05.csv", sep="")),
+  read.al(paste(result_path, "measurements/input06.csv", sep="")),
+  read.al(paste(result_path, "measurements/input07.csv", sep="")),
+  read.al(paste(result_path, "measurements/input08.csv", sep="")),
+  read.al(paste(result_path, "measurements/input09.csv", sep="")),
+  read.al(paste(result_path, "measurements/input10.csv", sep="")),
+  read.al(paste(result_path, "measurements/input11.csv", sep="")),
+  read.al(paste(result_path, "measurements/input12.csv", sep="")),
+  read.al(paste(result_path, "measurements/input13.csv", sep="")),
+  read.al(paste(result_path, "measurements/input14.csv", sep="")),
+  read.al(paste(result_path, "measurements/input15.csv", sep="")),
+  read.al(paste(result_path, "measurements/input16.csv", sep=""))
+  )
+inpust$response_time = inputs$response_time / 1000000
+```
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+ecdf_plot <- function(data) {
+    data[, colSums(is.na(data)) != nrow(data)] %>%
+    pivot_longer(everything()) %>%
+    group_by(name) %>%
+    arrange(value, by_group = TRUE) %>%
+    mutate(ecdf = seq(1/n(), 1 - 1/n(), length.out = n())) %>%
+    ggplot(aes(x = value, y = ecdf, colour=name, linetype=name)) +
+    xlim(0, 7500) +
+    geom_step() +
+    theme(text=element_text(size=12))+
+    theme(legend.text=element_text(size=12)) +
+    scale_linetype_manual(values=c("dashed", "solid")) +
+    labs(x="Indexing Throughput",y="ECDF", color="scenario", linetype="scenario")
+}
+
+ecdf_plot(data.frame(measurement = measurement01$response_time, simulation = simulationt01$response_time))
+
+mean(measurement01$response_time)
+mean(simulationt01$response_time)
+median(measurement01$response_time)
+median(simulationt01$response_time)
+
+nocoldstart_measurement01 = filter(measurement01, response_time < 1000)
+nocoldstart_simulationt01 = filter(simulationt01, response_time < 1000)
+
+mean(nocoldstart_measurement01$response_time)
+mean(nocoldstart_simulationt01$response_time)
+median(nocoldstart_measurement01$response_time)
+median(nocoldstart_simulationt01$response_time)
 ```
