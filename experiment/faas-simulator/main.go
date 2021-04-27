@@ -128,7 +128,11 @@ func toEntry(row []string) (sim.InputEntry, error) {
 	if err != nil {
 		return sim.InputEntry{}, fmt.Errorf("Error parsing status in row (%v): %q", row, err)
 	}
-	responseTime, err := strconv.ParseFloat(row[2], 64)
+	responseTimeStr, err := convertNumericStringFromNanoToSec("responseTime", row[2])
+	if err != nil {
+		return sim.InputEntry{}, fmt.Errorf("Error parsing response_time in row (%v): %q", row, err)
+	}
+	responseTime, err := strconv.ParseFloat(responseTimeStr, 64)
 	if err != nil {
 		return sim.InputEntry{}, fmt.Errorf("Error parsing response_time in row (%v): %q", row, err)
 	}
@@ -142,4 +146,13 @@ func toEntry(row []string) (sim.InputEntry, error) {
 		return sim.InputEntry{}, fmt.Errorf("Error parsing tsafter in row (%v): %q", row, err)
 	}
 	return sim.InputEntry{Status: status, ResponseTime: responseTime, Body: body, TsBefore: tsbefore, TsAfter: tsafter}, nil
+}
+
+func convertNumericStringFromNanoToSec(desc, s string) (string, error) {
+	tmp, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return "", fmt.Errorf("Error parsing %s of value %s, error: %q", desc, s, err)
+	}
+	s = fmt.Sprintf("%f", tmp/1000000000)
+	return s, nil
 }
