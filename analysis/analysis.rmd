@@ -8,40 +8,47 @@ output: pdf_document
 # LOAD DATA
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 result_path = "../results/"
-require(dplyr) 
+require(dplyr)
 read.al <- function(path) {
   df <- read.csv(path, sep=",",header=T, dec=".")
   return (df)
 }
-measurement = tail(read.al(paste(result_path, "measurements/measurement01.csv", sep="")), -500)
+remove_warmup <- function(data, warmup_value=0) {
+  if (warmup_value == 0) {
+    return(data)
+  } else {
+    return(tail(data, -warmup_value))
+  }
+}
+
+measurement = remove_warmup(read.al(paste(result_path, "measurements/measurement01.csv", sep="")))
 measurement$response_time = measurement$response_time / 1000000
-measurement = head(filter(measurement, response_time < 1000), 15000)
+measurement = filter(measurement, response_time < 1000)
 
-simulationt = tail(read.al(paste(result_path, "simulation/sim-lambda200-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")), -500)
-simulationt$response_time = simulationt$response_time * 1000
-simulationt = head(filter(simulationt, response_time < 1000), 15000)
-
+simulation = remove_warmup(read.al(paste(result_path, "simulation/sim-lambda200-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")))
+simulation$response_time = simulation$response_time * 1000
+simulation = filter(simulation, response_time < 1000)
 
 inputs = rbind(
-  tail(read.al(paste(result_path, "measurements/input01.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input02.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input03.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input04.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input05.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input06.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input07.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input08.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input09.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input10.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input11.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input12.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input13.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input14.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input15.csv", sep="")), -500),
-  tail(read.al(paste(result_path, "measurements/input16.csv", sep="")), -500)
+  remove_warmup(read.al(paste(result_path, "measurements/input01.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input02.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input03.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input04.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input05.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input06.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input07.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input08.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input09.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input10.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input11.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input12.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input13.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input14.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input15.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input16.csv", sep="")))
   )
 inputs$response_time = inputs$response_time / 1000000
-inputs = head(filter(inputs, response_time < 1000), 15000)
+inputs = filter(inputs, response_time < 1000)
 ```
 
 # ECDF VISUAL TEST
@@ -49,7 +56,7 @@ inputs = head(filter(inputs, response_time < 1000), 15000)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-ecdf_plot <- function(data, xinf, xsup, yinf, ysup) {
+ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", "solid", "dotted")) {
     data[, colSums(is.na(data)) != nrow(data)] %>%
     pivot_longer(everything()) %>%
     group_by(name) %>%
@@ -59,51 +66,125 @@ ecdf_plot <- function(data, xinf, xsup, yinf, ysup) {
     xlim(xinf, xsup) +
     ylim(yinf, ysup) +
     geom_step() +
-    theme(text=element_text(size=12))+
+    theme(text=element_text(size=12), plot.title = element_text(hjust = 0.5))+
     theme(legend.text=element_text(size=12)) +
-    scale_linetype_manual(values=c("dashed", "solid")) +
-    labs(x="Indexing Throughput",y="ECDF", color="scenario", linetype="scenario")
+    scale_fill_manual(values=hcl(c(15, 195, 150), 100, 65, alpha=c(0.5, 1))) +
+    scale_linetype_manual(values=linetype) +
+    labs(x="Indexing Throughput",y="ECDF", color="scenario", linetype="scenario") +
+    ggtitle(title)
 }
-measure_simu = data.frame(measurement = measurement$response_time, simulation = simulationt$response_time)
-measure_inpu = data.frame(measurement = measurement$response_time, inputs = inputs$response_time)
-inpu_simu = data.frame(inputs = inputs$response_time, simulation = simulationt$response_time)
 
-ecdf_plot(measure_simu, 0, 800, 0, 1)
-ecdf_plot(measure_inpu, 0, 800, 0, 1)
-ecdf_plot(inpu_simu, 0, 800, 0, 1)
+ecdf_df_with_outliers = data.frame(
+  measurement = head(measurement, 15000)$response_time,
+  simulation  = head(simulation, 15000)$response_time,
+  inputs  = head(inputs, 15000)$response_time
+  )
+
+ecdf_plot("", ecdf_df_with_outliers, 100, 1000, 0, 1)
 ```
 
 # BOXPLOT VISUAL TEST
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-sim_df_to_boxplot = data.frame(scenario = "sim", response_time = simulationt$response_time)
-mea_df_to_boxplot = data.frame(scenario = " mea", response_time = measurement$response_time)
-imp_df_to_boxplot = data.frame(scenario = "imp", response_time = inputs$response_time)
-
-
-boxplot_plot <- function(df_a, df_b, df_c, cols, yrange, outliershape = NA) {
+boxplot_plot <- function(title, df_a, df_b, df_c, yrange, outliershape = NA) {
   return(ggplot(rbind(df_a, df_b, df_c), aes(x=scenario, y=response_time, fill=scenario)) +
   geom_boxplot(outlier.shape = outliershape) +
-  scale_fill_manual(values=hcl(cols, 100, 65, alpha=c(0.5, 1))) +
+  scale_fill_manual(values=hcl(c(15, 195, 150), 100, 65, alpha=c(0.5, 1))) +
   coord_cartesian(ylim=yrange) + 
   theme(text=element_text(size=15)) +
   theme(legend.text=element_text(size=15)) +
   labs(x = "scenario", y = "indexing duration (ms)") +
-  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank()) +
-  theme(axis.title.x = element_blank())  +
-    theme_bw()#+
-  #facet_wrap(~scenario, scales = "free_x"))
+  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
+  theme_bw() +
+  ggtitle(title)
   )
 }
-boxplot_plot(mea_df_to_boxplot, sim_df_to_boxplot, imp_df_to_boxplot, c(15, 195, 150), c(140, 250))
-boxplot_plot(mea_df_to_boxplot, sim_df_to_boxplot, imp_df_to_boxplot, c(15, 195, 150), c(140, 1000), 16)
+
+df_sim_to_boxplot = data.frame(scenario = "sim", response_time = simulation$response_time)
+df_mean_to_boxplot = data.frame(scenario = " mea", response_time = measurement$response_time)
+df_imp_to_boxplot = data.frame(scenario = "imp", response_time = inputs$response_time)
+
+boxplot_plot("NO Outliers", df_mean_to_boxplot, df_sim_to_boxplot, df_imp_to_boxplot, c(100, 300))
+boxplot_plot("NO Cold Start", df_mean_to_boxplot, df_sim_to_boxplot, df_imp_to_boxplot, c(100, 1000), 16)
 ```
 
 
+# IDENTIFYING DISTRIBUTION
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+library(fitdistrplus)
+descdist(measurement$response_time, discrete = FALSE, boot=1000)
+hist(measurement$response_time, freq = FALSE)
+lines(density(measurement$response_time))
+
+descdist(simulation$response_time, discrete = FALSE, boot=1000)
+hist(simulation$response_time, freq = FALSE)
+lines(density(simulation$response_time))
+
+descdist(inputs$response_time, discrete = FALSE, boot=1000)
+hist(inputs$response_time, freq = FALSE)
+lines(density(inputs$response_time))
+```
+
+
+# PLOT CI TABLE
+```{r setup, include=FALSE}
+require(dplyr)
+require(ggplot2)
+library(ggpubr)
+require(quantileCI)
+require(base64enc)
+summary_table <- function(df1, tag1, df2, tag2) {
+  qCI <- function(df, p) {
+    return(quantileCI::quantile_confint_nyblom(df, p))
+  }
+  stats <- function(df) {
+    avg = signif(t.test(df)$conf.int, digits = 2)
+    p50 = signif(qCI(df, 0.5), digits = 4)
+    p95 = signif(qCI(df, 0.95), digits = 4)
+    p99 = signif(qCI(df, 0.99), digits = 4)
+    p999 = signif(qCI(df, 0.999), digits = 4)
+    p9999 = signif(qCI(df, 0.9999), digits = 4)
+    p99999 = signif(qCI(df, 0.99999), digits = 4)
+    dist = signif(qCI(df, 0.99999)- qCI(df, 0.5), digits = 4)
+    data <- c(avg, p50, p95, p99, p999, p9999, p99999, dist)
+    return(data)
+  }
+
+  stats1 = stats(df1)
+  stats2 = stats(df2)
+  avgdf    <- data.frame("avg",    stats1[1],  stats1[2],  stats2[1],  stats2[2])
+  p50df    <- data.frame("p50",    stats1[3],  stats1[4],  stats2[3],  stats2[4])
+  p95df    <- data.frame("p95",    stats1[5],  stats1[6],  stats2[5],  stats2[6])
+  p99df    <- data.frame("p99",    stats1[7],  stats1[8],  stats2[7],  stats2[8])
+  p999df   <- data.frame("p999",   stats1[9],  stats1[10], stats2[9],  stats2[10])
+  p9999df  <- data.frame("p9999",  stats1[11], stats1[12], stats2[11], stats2[12])
+  p99999df <- data.frame("p99999", stats1[13], stats1[14], stats2[13], stats2[14])
+  distdf   <- data.frame("dist",   stats1[15], stats1[16], stats2[15], stats2[16])
+
+  tag1_inf = paste(tag1, "cii", sep = ".")
+  tag1_sup = paste(tag1, "cis", sep = ".")
+  tag2_inf = paste(tag2, "cii", sep = ".")
+  tag2_sup = paste(tag2, "cis", sep = ".")
+  names(avgdf)    <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p50df)    <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p95df)    <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p99df)    <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p999df)   <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p9999df)  <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(p99999df) <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  names(distdf)   <- c("stats", tag1_inf, tag1_sup, tag2_inf, tag2_sup)
+  df <- rbind(avgdf, p50df, p95df, p99df, p999df, p9999df, p99999df, distdf)
+  df
+}
+summary_table(measurement$response_time, "measurement", simulation$response_time,"simulation")
+summary_table(measurement$response_time, "measurement", inputs$response_time,"inputs")
+summary_table(inputs$response_time, "inputs", simulation$response_time,"simulation")
+```
+
 # STATISTICAL SAMPLE TEST
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-t.test(measurement$response_time, simulationt$response_time)
-ks.test(measurement$response_time, simulationt$response_time)
-wilcox.test(measurement$response_time, simulationt$response_time, alt="gr")
+t.test(measurement$response_time, simulation$response_time)
+ks.test(measurement$response_time, simulation$response_time)
+wilcox.test(measurement$response_time, simulation$response_time, alt="two.sided")
 require(BWStest)
-bws_test(measurement$response_time, simulationt$response_time)
+bws_test(measurement$response_time, simulation$response_time)
 ```
