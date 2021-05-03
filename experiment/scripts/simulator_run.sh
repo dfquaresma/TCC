@@ -8,7 +8,7 @@ echo "LAMBDA: ${LAMBDA:=20}"
 echo "OUTPUT_PATH: ${OUTPUT_PATH:=/home/david/TCC/TCC/results/simulation/}"
 echo "WARMUP: ${WARMUP:=0}"
 echo "SCHEDULER: ${SCHEDULER:=0}"
-echo "ID: ${ID:=lambda200-idleness300s-warmup0-id00}"
+echo "ID: ${ID:=00}"
 echo "NUMBER_OF_INPUTS: ${NUMBER_OF_INPUTS:=16}"
 echo "INPUT_PATH: ${INPUT_PATH:=/home/david/TCC/TCC/results/measurements/}"
 
@@ -19,4 +19,4 @@ do
     inputs="${inputs},${INPUT_PATH}input${id}.csv"
 done
 
-../faas-simulator/serverless --duration=${SIM_DURATION} --lambda=${LAMBDA} --output=${OUTPUT_PATH} --warmup=${WARMUP} --scheduler=${SCHEDULER} --scenario=${ID} --inputs=${inputs}
+../faas-simulator/serverless --duration=${SIM_DURATION} --lambda=${LAMBDA} --output=${OUTPUT_PATH} --warmup=${WARMUP} --scheduler=${SCHEDULER} --scenario="lambda${LAMBDA}-idleness300s-warmup${WARMUP}-id${ID}" --inputs=${inputs}

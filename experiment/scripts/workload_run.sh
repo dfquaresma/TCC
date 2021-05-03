@@ -4,7 +4,7 @@ set -x
 
 echo "TARGET: ${TARGET:=https://5vjlxy2vi2.execute-api.us-east-2.amazonaws.com/thumbnailator/ 
 measurement02.csv}"
-echo "EXPI_ID: ${EXPI_ID:=measurement01.csv}"
+echo "EXPI_ID: ${EXPI_ID:=measurement00.csv}"
 echo "RESULTS_PATH: ${RESULTS_PATH:=../../results/measurements}"
 echo "NUMBER_OF_REQS: ${NUMBER_OF_REQS:=20000}"
 echo "LAMBDA: ${LAMBDA:=200}"
