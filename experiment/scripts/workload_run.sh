@@ -9,4 +9,4 @@ echo "RESULTS_PATH: ${RESULTS_PATH:=../../results/measurements}"
 echo "NUMBER_OF_REQS: ${NUMBER_OF_REQS:=20000}"
 echo "LAMBDA: ${LAMBDA:=200}"
 
-go run main.go --target=${TARGET} --exp_id=${EXPI_ID} --results_path=${RESULTS_PATH} --nreqs=${NUMBER_OF_REQS} --lambda=${LAMBDA}
+go run ../workload/main.go --target=${TARGET} --exp_id=${EXPI_ID} --results_path=${RESULTS_PATH} --nreqs=${NUMBER_OF_REQS} --lambda=${LAMBDA}
