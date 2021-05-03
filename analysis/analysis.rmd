@@ -25,20 +25,20 @@ measurement = remove_warmup(read.al(paste(result_path, "measurements/measurement
 measurement$response_time = measurement$response_time / 1000000
 measurement = filter(measurement, response_time < 1000)
 
-simulation = remove_warmup(read.al(paste(result_path, "simulation/sim-lambda200-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")))
+simulation = remove_warmup(read.al(paste(result_path, "simulation/sim-lambda100-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")))
 simulation$response_time = simulation$response_time * 1000
 simulation = filter(simulation, response_time < 1000)
 
 inputs = rbind(
-  remove_warmup(read.al(paste(result_path, "measurements/input01.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input02.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input03.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input04.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input05.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input06.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input07.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input08.csv", sep=""))),
-  remove_warmup(read.al(paste(result_path, "measurements/input09.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input1.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input2.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input3.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input4.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input5.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input6.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input7.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input8.csv", sep=""))),
+  remove_warmup(read.al(paste(result_path, "measurements/input9.csv", sep=""))),
   remove_warmup(read.al(paste(result_path, "measurements/input10.csv", sep=""))),
   remove_warmup(read.al(paste(result_path, "measurements/input11.csv", sep=""))),
   remove_warmup(read.al(paste(result_path, "measurements/input12.csv", sep=""))),
