@@ -21,13 +21,41 @@ remove_warmup <- function(data, warmup_value=0) {
   }
 }
 
-measurement = remove_warmup(read.al(paste(result_path, "measurements/measurement01.csv", sep="")))
-measurement$response_time = measurement$response_time / 1000000
-measurement = filter(measurement, response_time < 1000)
+measurements = "NULL"
+for (id in 1:4) {
+  for (lambda in c(100, 200)) {
+    path = paste(result_path, "measurements/measurement-lambda", lambda, "-", id, ".csv", sep="")
+    measurement = remove_warmup(read.al(path))
+    measurement$response_time = measurement$body / 1000000
+    measurement = filter(measurement, response_time < 1000)
+    measurement$id = paste("measurement-lambda", lambda, "-id", id, sep="")
+    measurement$lambda = lambda
+    if (measurements == "NULL") {
+      measurements = measurement
+    } else {
+      measurements = rbind(measurements, measurement)
+    }
+  }
+}
+rm(measurement)
 
-simulation = remove_warmup(read.al(paste(result_path, "simulation/sim-lambda100-idleness300s-warmup0-id01-normscheduler-reqs.csv", sep="")))
-simulation$response_time = simulation$response_time * 1000
-simulation = filter(simulation, response_time < 1000)
+simulations = "NULL"
+for (id in 1:4) {
+  for (lambda in c(100, 200)) {
+    path = paste(result_path, "simulation/sim-lambda", lambda, "-idleness300s-warmup0-id0", id, "-normscheduler-reqs.csv", sep="")
+    simulation = remove_warmup(read.al(path))
+    simulation$response_time = simulation$response_time * 1000
+    simulation = filter(simulation, response_time < 1000)
+    simulation$id = paste("simulation-lambda", lambda, "-id", id, sep="")
+    simulation$lambda = lambda
+    if (simulations == "NULL") {
+      simulations = simulation
+    } else {
+      simulations = rbind(simulations, simulation)
+    }
+  }
+}
+rm(simulation)
 
 inputs = rbind(
   remove_warmup(read.al(paste(result_path, "measurements/input1.csv", sep=""))),
@@ -47,7 +75,7 @@ inputs = rbind(
   remove_warmup(read.al(paste(result_path, "measurements/input15.csv", sep=""))),
   remove_warmup(read.al(paste(result_path, "measurements/input16.csv", sep="")))
   )
-inputs$response_time = inputs$response_time / 1000000
+inputs$response_time = inputs$body / 1000000
 inputs = filter(inputs, response_time < 1000)
 ```
 
@@ -56,7 +84,7 @@ inputs = filter(inputs, response_time < 1000)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", "solid", "dotted")) {
+ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", "solid", "dotted"), cols=c(15, 195, 150)) {
     data[, colSums(is.na(data)) != nrow(data)] %>%
     pivot_longer(everything()) %>%
     group_by(name) %>%
@@ -68,19 +96,41 @@ ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", 
     geom_step() +
     theme(text=element_text(size=12), plot.title = element_text(hjust = 0.5))+
     theme(legend.text=element_text(size=12)) +
-    scale_fill_manual(values=hcl(c(15, 195, 150), 100, 65, alpha=c(0.5, 1))) +
+    scale_fill_manual(values=hcl(cols, 100, 65, alpha=c(0.5, 1))) +
     scale_linetype_manual(values=linetype) +
-    labs(x="Indexing Throughput",y="ECDF", color="scenario", linetype="scenario") +
+    labs(x="Response Time (ms)",y="ECDF", color="scenario", linetype="scenario") +
     ggtitle(title)
 }
 
-ecdf_df_with_outliers = data.frame(
-  measurement = head(measurement, 15000)$response_time,
-  simulation  = head(simulation, 15000)$response_time,
-  inputs  = head(inputs, 15000)$response_time
-  )
+ecdf_plot("VERIFYING RESULTS", data.frame(
+  measurement = sample(filter(measurements, id == "measurement-lambda200-id1")$response_time, 15000),
+  simulation  = sample(filter(simulations, id == "simulation-lambda200-id1")$response_time, 15000),
+  inputs      = sample(inputs$response_time, 15000)
+), 0, 1000, 0, 1)
 
-ecdf_plot("", ecdf_df_with_outliers, 100, 1000, 0, 1)
+ecdf_plot("VERIFYING SIMULATION", data.frame(
+  simulations_lambda100 = sample(filter(simulations, lambda == 100)$response_time, 15000),
+  simulations_lambda200  = sample(filter(simulations, lambda == 200)$response_time, 15000),
+  inputs      = sample(inputs$response_time, 15000)
+), 0, 1000, 0, 1)
+
+ecdf_plot("VERIFYING MEASUREMENTS", data.frame(
+  measurements_lambda100 = sample(filter(measurements, lambda == 100)$response_time, 15000),
+  measurements_lambda200  = sample(filter(measurements, lambda == 200)$response_time, 15000),
+  inputs      = sample(inputs$response_time, 15000)
+), 0, 1000, 0, 1)
+
+ecdf_plot("VERIFYING MEASUREMENTS FOR 100 LAMBDA", data.frame(
+  measurements_lambda100_id1 = sample(filter(measurements, id == "measurement-lambda100-id1")$response_time, 15000),
+  measurements_lambda100_id2  = sample(filter(measurements, id == "measurement-lambda100-id2")$response_time, 15000),
+  measurements_lambda100_id3  = sample(filter(measurements, id == "measurement-lambda100-id3")$response_time, 15000)
+), 0, 1000, 0, 1)
+
+ecdf_plot("VERIFYING MEASUREMENTS FOR 200 LAMBDA", data.frame(
+  measurements_lambda200_id1 = sample(filter(measurements, id == "measurement-lambda200-id1")$response_time, 15000),
+  measurements_lambda200_id2  = sample(filter(measurements, id == "measurement-lambda200-id2")$response_time, 15000),
+  measurements_lambda200_id3  = sample(filter(measurements, id == "measurement-lambda200-id3")$response_time, 15000)
+), 0, 1000, 0, 1)
 ```
 
 # BOXPLOT VISUAL TEST
@@ -99,22 +149,40 @@ boxplot_plot <- function(title, df_a, df_b, df_c, yrange, outliershape = NA) {
   )
 }
 
+measurement = filter(measurements, lambda == 200)
+simulation = filter(simulations, lambda == 200)
+
 df_sim_to_boxplot = data.frame(scenario = "sim", response_time = simulation$response_time)
 df_mean_to_boxplot = data.frame(scenario = " mea", response_time = measurement$response_time)
 df_imp_to_boxplot = data.frame(scenario = "imp", response_time = inputs$response_time)
 
 boxplot_plot("NO Outliers", df_mean_to_boxplot, df_sim_to_boxplot, df_imp_to_boxplot, c(100, 300))
 boxplot_plot("NO Cold Start", df_mean_to_boxplot, df_sim_to_boxplot, df_imp_to_boxplot, c(100, 1000), 16)
+
+rm(df_sim_to_boxplot, df_mean_to_boxplot, df_imp_to_boxplot)
+rm(measurement, simulation)
 ```
 
 
 # IDENTIFYING DISTRIBUTION
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 library(fitdistrplus)
+measurement = filter(measurements, lambda == 100)
 descdist(measurement$response_time, discrete = FALSE, boot=1000)
 hist(measurement$response_time, freq = FALSE)
 lines(density(measurement$response_time))
 
+measurement = filter(measurements, lambda == 200)
+descdist(measurement$response_time, discrete = FALSE, boot=1000)
+hist(measurement$response_time, freq = FALSE)
+lines(density(measurement$response_time))
+
+simulation = filter(simulations, lambda == 100)
+descdist(simulation$response_time, discrete = FALSE, boot=1000)
+hist(simulation$response_time, freq = FALSE)
+lines(density(simulation$response_time))
+
+simulation = filter(simulations, lambda == 200)
 descdist(simulation$response_time, discrete = FALSE, boot=1000)
 hist(simulation$response_time, freq = FALSE)
 lines(density(simulation$response_time))
@@ -122,6 +190,8 @@ lines(density(simulation$response_time))
 descdist(inputs$response_time, discrete = FALSE, boot=1000)
 hist(inputs$response_time, freq = FALSE)
 lines(density(inputs$response_time))
+
+rm(measurement, simulation)
 ```
 
 
@@ -175,16 +245,31 @@ summary_table <- function(df1, tag1, df2, tag2) {
   df <- rbind(avgdf, p50df, p95df, p99df, p999df, p9999df, p99999df, distdf)
   df
 }
+measurement = filter(measurements, lambda == 100)
+simulation = filter(simulations, lambda == 100)
 summary_table(measurement$response_time, "measurement", simulation$response_time,"simulation")
 summary_table(measurement$response_time, "measurement", inputs$response_time,"inputs")
 summary_table(inputs$response_time, "inputs", simulation$response_time,"simulation")
+
+measurement = filter(measurements, lambda == 200)
+simulation = filter(simulations, lambda == 200)
+summary_table(measurement$response_time, "measurement", simulation$response_time,"simulation")
+summary_table(measurement$response_time, "measurement", inputs$response_time,"inputs")
+summary_table(inputs$response_time, "inputs", simulation$response_time,"simulation")
+
+rm(measurement, simulation)
 ```
 
 # STATISTICAL SAMPLE TEST
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-t.test(measurement$response_time, simulation$response_time)
+measurement = filter(measurements, lambda == 200)
+simulation = filter(simulations, lambda == 200)
+
 ks.test(measurement$response_time, simulation$response_time)
 wilcox.test(measurement$response_time, simulation$response_time, alt="two.sided")
 require(BWStest)
 bws_test(measurement$response_time, simulation$response_time)
+t.test(measurement$response_time, simulation$response_time)
+
+rm(measurement, simulation)
 ```
