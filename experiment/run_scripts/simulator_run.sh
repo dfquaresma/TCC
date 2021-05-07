@@ -19,4 +19,4 @@ do
     inputs="${inputs},${INPUT_PATH}input${id}.csv"
 done
 
-../faas-simulator/serverless --duration=${SIM_DURATION} --lambda=${LAMBDA} --output=${OUTPUT_PATH} --warmup=${WARMUP} --scheduler=${SCHEDULER} --scenario="lambda${LAMBDA}-idleness300s-warmup${WARMUP}-id${ID}" --inputs=${inputs}
+../alter-faas-simulator/serverless --duration=${SIM_DURATION} --lambda=${LAMBDA} --output=${OUTPUT_PATH} --warmup=${WARMUP} --scheduler=${SCHEDULER} --scenario="lambda${LAMBDA}-idleness300s-warmup${WARMUP}-id${ID}" --inputs=${inputs}
