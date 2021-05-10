@@ -65,7 +65,7 @@ rm(simulation)
 warmup = 250
 
 inputs = "NULL"
-for (id in 1:16) {
+for (id in 1:32) {
   path = paste(result_path, "measurements/input-lambda0-", id, ".csv", sep="")
   input = read.al(path)
   input = remove_warmup(input, warmup)
@@ -91,6 +91,10 @@ inputs = filter(inputs, service_time < 500)
 measurements$service_time = round(measurements$service_time, digits=2)
 simulations$service_time = round(simulations$service_time, digits=2)
 inputs$service_time = round(inputs$service_time, digits=2)
+
+# tss = filter(simulations, tag=="simulation-lambda20-id1")
+# tmp2 = read.al("/home/david/TCC/TCC/results/simulation/sim-lambda20-idleness300s-warmup0-id1-normscheduler-instances.csv")
+
 ```
 
 # ECDF VISUAL TEST
@@ -167,16 +171,16 @@ rm(measurement, simulation)
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 library(fitdistrplus)
 measurement = filter(measurements, lambda == 20)
-descdist(measurement$service_time, discrete = FALSE, boot=1000)
+descdist(measurement$service_time, discrete = FALSE, boot=2000)
 hist(measurement$service_time, freq = FALSE)
 lines(density(measurement$service_time))
 
 simulation = filter(simulations, lambda == 20)
-descdist(simulation$service_time, discrete = FALSE, boot=1000)
+descdist(simulation$service_time, discrete = FALSE, boot=2000)
 hist(simulation$service_time, freq = FALSE)
 lines(density(simulation$service_time))
 
-descdist(inputs$service_time, discrete = FALSE, boot=1000)
+descdist(inputs$service_time, discrete = FALSE, boot=2000)
 hist(inputs$service_time, freq = FALSE)
 lines(density(inputs$service_time))
 
@@ -265,7 +269,6 @@ measurement_1 = sample(filter(measurements, tag == "measurement-lambda20-id1")$s
 measurement_2 = sample(filter(measurements, tag == "measurement-lambda20-id4")$service_time, 100)
 ks.test(measurement_1, measurement_2)
 kruskal.test(measurement_1, measurement_2) 
-
 
 rm(measurement, simulation, measuremen_1, measuremen_2)
 
