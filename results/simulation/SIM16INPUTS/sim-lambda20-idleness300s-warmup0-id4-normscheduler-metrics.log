@@ -1,0 +1,2 @@
+scenario,scheduler_name,throughput,instances_cost,instances_efficiency,simulation_exec_time
+lambda20-idleness300s-warmup0-id4,-normscheduler,49.904762,10281.11312,0.0321392572,0
