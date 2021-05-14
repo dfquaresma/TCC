@@ -84,9 +84,9 @@ paste("Measurement cold starts:", NROW(filter(measurements, service_time > 500))
 paste("Simulation cold starts:", NROW(filter(simulations, service_time > 500)))
 paste("Inputs cold starts:", NROW(filter(inputs, service_time > 500)))
 
-measurements = filter(measurements, service_time < 500)
-simulations = filter(simulations, service_time < 500)
-inputs = filter(inputs, service_time < 500)
+# measurements = filter(measurements, service_time < 500)
+# simulations = filter(simulations, service_time < 500)
+# inputs = filter(inputs, service_time < 500)
 
 measurements$service_time = round(measurements$service_time, digits=2)
 simulations$service_time = round(simulations$service_time, digits=2)
@@ -94,7 +94,14 @@ inputs$service_time = round(inputs$service_time, digits=2)
 
 # tss = filter(simulations, tag=="simulation-lambda20-id1")
 # tmp2 = read.al("/home/david/TCC/TCC/results/simulation/sim-lambda20-idleness300s-warmup0-id1-normscheduler-instances.csv")
+# tmp = read.al("/home/david/TCC/TCC/results/measurements/measurement-lambda0-test.csv")
+# rm(tss, tmp, tmp2)
 
+NROW(
+  filter(
+    filter(measurements, service_time < 80), service_time > 60))
+  )
+)
 ```
 
 # ECDF VISUAL TEST
@@ -102,8 +109,8 @@ inputs$service_time = round(inputs$service_time, digits=2)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", "solid", "dotted"), cols=c(15, 195, 150)) {
-    data[, colSums(is.na(data)) != nrow(data)] %>%
+ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", "solid", "dotted"), cols=c(15, 195, 150), img_name=FALSE) {
+    p <- data[, colSums(is.na(data)) != nrow(data)] %>%
     pivot_longer(everything()) %>%
     group_by(name) %>%
     arrange(value, by_group = TRUE) %>%
@@ -118,23 +125,34 @@ ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dashed", 
     scale_linetype_manual(values=linetype) +
     labs(x="Response Time (ms)",y="ECDF", color="scenario", linetype="scenario") +
     ggtitle(title)
+
+    if (img_name != FALSE) {
+      ggsave(img_name, width=10, height=5)
+    }
+    print(p)
 }
 
 measurement = filter(measurements, lambda == 20)
 simulation = filter(simulations, lambda == 20)
 
-ecdf_plot("VERIFYING RESULTS", data.frame(
-  measurement = measurement$service_time,
-  simulation  = simulation$service_time,
-  inputs      = inputs$service_time
-), 10, 30, 0, 0.6)
-
+# ecdf_plot("VERIFYING RESULTS", data.frame(
+#   measurement = measurement$service_time,
+#   simulation  = simulation$service_time,
+#   inputs      = inputs$service_time
+# ), 10, 25, 0, 0.5)
+# 
+# 
+# ecdf_plot("VERIFYING RESULTS", data.frame(
+#   measurement = measurements$service_time,
+#   simulation  = simulations$service_time,
+#   inputs      = inputs$service_time
+# ), 20, 50, 0.5, 1)
 
 ecdf_plot("VERIFYING RESULTS", data.frame(
   measurement = measurements$service_time,
   simulation  = simulations$service_time,
   inputs      = inputs$service_time
-), 20, 50, 0.5, 1)
+), 10, 80, 0, 1, img_name="results-ecdf.png")
 
 rm(measurement, simulation)
 ```
@@ -240,18 +258,24 @@ summary_table <- function(df1, tag1, df2, tag2) {
 }
 measurement = filter(measurements, lambda == 20)
 simulation = filter(simulations, lambda == 20)
+
 summary_table(measurement$service_time, "measurement", simulation$service_time,"simulation")
 summary_table(measurement$service_time, "measurement", inputs$service_time,"inputs")
 summary_table(inputs$service_time, "inputs", simulation$service_time,"simulation")
 
 
+summary_table(filter(measurements, tag == "measurement-lambda20-id1")$service_time, "mid1",
+              filter(measurements, tag == "measurement-lambda20-id2")$service_time, "mid2")
 
-summary_table(filter(measurements, tag == "measurement-lambda20-id1")$service_time, "id1",
-              filter(measurements, tag == "measurement-lambda20-id2")$service_time, "id2")
+summary_table(filter(measurements, tag == "measurement-lambda20-id3")$service_time, "mid3",
+              filter(measurements, tag == "measurement-lambda20-id4")$service_time, "mid4")
 
-summary_table(filter(measurements, tag == "measurement-lambda20-id3")$service_time, "id3",
-              filter(measurements, tag == "measurement-lambda20-id4")$service_time, "id4")
 
+summary_table(filter(simulations, tag == "simulation-lambda20-id1")$service_time, "sid1",
+              filter(simulations, tag == "simulation-lambda20-id2")$service_time, "sid2")
+
+summary_table(filter(simulations, tag == "simulation-lambda20-id3")$service_time, "sid3",
+              filter(simulations, tag == "simulation-lambda20-id4")$service_time, "sid4")
 
 
 rm(measurement, simulation)
@@ -259,14 +283,14 @@ rm(measurement, simulation)
 
 # STATISTICAL SAMPLE TEST
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-measurement = sample(filter(measurements, lambda == 20)$service_time, 100)
-simulation = sample(filter(simulations, lambda == 20)$service_time, 100)
+measurement = sample(filter(measurements, lambda == 20)$service_time, 500)
+simulation = sample(filter(simulations, lambda == 20)$service_time, 500)
 
 ks.test(measurement, simulation)
 kruskal.test(measurement, simulation) # http://www.sthda.com/english/wiki/kruskal-wallis-test-in-r and https://stat-methods.com/home/kruskal-wallis-r/
 
-measurement_1 = sample(filter(measurements, tag == "measurement-lambda20-id1")$service_time, 100)
-measurement_2 = sample(filter(measurements, tag == "measurement-lambda20-id4")$service_time, 100)
+measurement_1 = sample(filter(measurements, tag == "measurement-lambda20-id1")$service_time, 500)
+measurement_2 = sample(filter(measurements, tag == "measurement-lambda20-id4")$service_time, 500)
 ks.test(measurement_1, measurement_2)
 kruskal.test(measurement_1, measurement_2) 
 
