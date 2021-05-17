@@ -26,8 +26,8 @@ head_size = 20000
 
 measurements = "NULL"
 for (id in 1:4) {
-  for (lambda in c(10, 20)) {
-    path = paste(result_path, "measurements/measurement-lambda", lambda, "-", id, ".csv", sep="")
+  for (lambda in c(20)) {
+    path = paste(result_path, "measurements/MEASUREMENTS_20000/measurement-lambda", lambda, "-", id, ".csv", sep="")
     measurement = read.al(path)
     measurement = remove_warmup(head(measurement, head_size), warmup)
     measurement$response_time = measurement$response_time / 1000000
@@ -66,7 +66,7 @@ warmup = 250
 
 inputs = "NULL"
 for (id in 1:32) {
-  path = paste(result_path, "measurements/input-lambda0-", id, ".csv", sep="")
+  path = paste(result_path, "measurements/INPUT_5000/input-lambda0-", id, ".csv", sep="")
   input = read.al(path)
   input = remove_warmup(input, warmup)
   input$response_time = input$response_time / 1000000
@@ -104,7 +104,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 require(quantileCI)
-ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dotted", "solid", "dashed"), cols=c(15, 195, 150), img_name=FALSE) {
+ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("solid", "dotted", "dashed"), cols=c(15, 195, 150), img_name=FALSE) {
     simulation.color <- "blue"
     simulation.p999 <- quantile(data$simulation, 0.999)
     simulation.p50 <- quantile(data$simulation, 0.5)
@@ -114,7 +114,7 @@ ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dotted", 
     inputs.color <- "green"
     inputs.p999 <- quantile(data$inputs, 0.999)
     inputs.p50 <- quantile(data$inputs, 0.5)
-    
+
     annotate_y = 0.9
     size = 0.5
     alpha = 0.8
@@ -139,23 +139,23 @@ ecdf_plot <- function(title, data, xinf, xsup, yinf, ysup, linetype=c("dotted", 
     scale_linetype_manual(values=linetype) +
     labs(x="Response Time (ms)",y="ECDF", color="scenario", linetype="scenario") +
     ggtitle(title) +
-      
+
     # P50
     annotate(geom="text", x=simulation.p50, y=annotate_y, label="Median", angle=angle, color=simulation.color) +
     geom_vline(xintercept=simulation.p50, linetype="dashed", size=size, alpha=alpha, color=simulation.color) +
-    annotate(geom="text", x=measurement.p50, y=annotate_y, label="Median", angle=angle, color=measurement.color) + 
-    geom_vline(xintercept=measurement.p50, linetype="dashed", size=size, alpha=alpha, color=measurement.color) +
-    annotate(geom="text", x=inputs.p50, y=annotate_y, label="Median", angle=angle, color=inputs.color) + 
-    geom_vline(xintercept=inputs.p50, linetype="dashed", size=size, alpha=alpha/2, color=inputs.color) +
-    
+    annotate(geom="text", x=measurement.p50, y=annotate_y, label="Median", angle=angle, color=measurement.color) +
+    geom_vline(xintercept=measurement.p50, linetype="dotted", size=size, alpha=alpha, color=measurement.color) +
+    annotate(geom="text", x=inputs.p50, y=annotate_y, label="Median", angle=angle, color=inputs.color) +
+    geom_vline(xintercept=inputs.p50, linetype="solid", size=size, alpha=alpha/2, color=inputs.color) +
+
     # P999
     annotate(geom="text", x=simulation.p999, y=annotate_y, label="99.9th", angle=angle, color=simulation.color) +
     geom_vline(xintercept=simulation.p999, linetype="dashed", size=size, alpha=alpha, color=simulation.color) +
-    annotate(geom="text", x=measurement.p999, y=annotate_y, label="99.9th", angle=angle, color=measurement.color) + 
-    geom_vline(xintercept=measurement.p999, linetype="dashed", size=size, alpha=alpha, color=measurement.color) +
-    annotate(geom="text", x=inputs.p999, y=annotate_y, label="99.9th", angle=angle, color=inputs.color) + 
-    geom_vline(xintercept=inputs.p999, linetype="dashed", size=size, alpha=alpha/2, color=inputs.color) +
-    
+    annotate(geom="text", x=measurement.p999, y=annotate_y, label="99.9th", angle=angle, color=measurement.color) +
+    geom_vline(xintercept=measurement.p999, linetype="dotted", size=size, alpha=alpha, color=measurement.color) +
+    annotate(geom="text", x=inputs.p999, y=annotate_y, label="99.9th", angle=angle, color=inputs.color) +
+    geom_vline(xintercept=inputs.p999, linetype="solid", size=size, alpha=alpha/2, color=inputs.color) +
+
       
     theme_bw()
         
@@ -185,7 +185,7 @@ ecdf_plot("Comparison of ECDF Curves of Experiments", data.frame(
   measurement = measurements$service_time,
   simulation  = simulations$service_time,
   inputs      = inputs$service_time
-), 10, 100, 0, 1, img_name="results-ecdf.png")
+), 10, 100, 0, 1), img_name="results-ecdf.png")
 
 rm(measurement, simulation)
 ```
@@ -301,39 +301,37 @@ summary_table(measurement$service_time, "measurement", inputs$service_time,"inpu
 summary_table(inputs$service_time, "inputs", simulation$service_time,"simulation")
 
 
-summary_table(filter(measurements, tag == "measurement-lambda20-id1")$service_time, "mid1",
-              filter(measurements, tag == "measurement-lambda20-id2")$service_time, "mid2")
-
-summary_table(filter(measurements, tag == "measurement-lambda20-id3")$service_time, "mid3",
-              filter(measurements, tag == "measurement-lambda20-id4")$service_time, "mid4")
-
-
-summary_table(filter(simulations, tag == "simulation-lambda20-id1")$service_time, "sid1",
-              filter(simulations, tag == "simulation-lambda20-id2")$service_time, "sid2")
-
-summary_table(filter(simulations, tag == "simulation-lambda20-id3")$service_time, "sid3",
-              filter(simulations, tag == "simulation-lambda20-id4")$service_time, "sid4")
-
-
 rm(measurement, simulation)
+
+mean(simulations$service_time)
+mean(inputs$service_time)
+mean(measurements$service_time)
 ```
 
 # STATISTICAL SAMPLE TEST
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-library(kSamples)
-measurement = sample(filter(measurements, lambda == 20)$service_time, 100)
-simulation = sample(filter(simulations, lambda == 20)$service_time, 100)
+tmp = rbind(
+  data.frame(service_time = sample(measurements$service_time, 70000), group = "measurement"),
+  data.frame(service_time = sample(simulations$service_time, 70000), group = "simulation"),
+  data.frame(service_time = sample(inputs$service_time, 70000), group = "input")
+)
+kruskal.test(service_time ~ group, tmp) # http://www.sthda.com/english/wiki/kruskal-wallis-test-in-r and https://stat-methods.com/home/kruskal-wallis-r/
 
-ad.test(measurement, simulation)
-ks.test(measurement, simulation)
+pairwise.wilcox.test(tmp$service_time, tmp$group,
+                 p.adjust.method = "BH")
 
-measurement_1 = sample(filter(measurements, tag == "measurement-lambda20-id1")$service_time, 100)
-measurement_2 = sample(filter(measurements, tag == "measurement-lambda20-id4")$service_time, 100)
-ad.test(measurement_1, measurement_2)
-ks.test(measurement_1, measurement_2)
 
-# kruskal.test(measurement, simulation) # http://www.sthda.com/english/wiki/kruskal-wallis-test-in-r and https://stat-methods.com/home/kruskal-wallis-r/
-
+rm(tmp)
+### DEPRECATED
+# measurement = sample(filter(measurements, lambda == 20)$service_time, 100)
+# simulation = sample(filter(simulations, lambda == 20)$service_time, 100)
+# library(kSamples)
+# ad.test(measurement, simulation)
+# ks.test(measurement, simulation)
+# measurement_1 = sample(filter(measurements, tag == "measurement-lambda20-id1")$service_time, 100)
+# measurement_2 = sample(filter(measurements, tag == "measurement-lambda20-id4")$service_time, 100)
+# ad.test(measurement_1, measurement_2)
+# ks.test(measurement_1, measurement_2)
 # wilcox.test(measurement, simulation, alt = "two.sided", mu=0, paired=FALSE, conf.int=T, paired=F, conf.level=0.95, exact=T, correct=T)
 # require(BWStest)
 # bws_test(measurement, simulation)
@@ -341,6 +339,5 @@ ks.test(measurement_1, measurement_2)
 # plot(ecdf(filter(simulations, lambda == 20)$service_time))
 # lines(ecdf(filter(measurements, lambda == 20)$service_time), col='red')
 # about validation: https://www.scielo.br/scielo.php?script=sci_arttext&pid=S0101-74382011000100005
-
-rm(measurement, simulation)
+# rm(measurement, simulation)
 ```
