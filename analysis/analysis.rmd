@@ -185,7 +185,7 @@ ecdf_plot("Comparison of ECDF Curves of Experiments", data.frame(
   measurement = measurements$service_time,
   simulation  = simulations$service_time,
   inputs      = inputs$service_time
-), 10, 100, 0, 1), img_name="results-ecdf.png")
+), 10, 100, 0, 1, img_name="results-ecdf.png")
 
 rm(measurement, simulation)
 ```
