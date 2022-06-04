@@ -7,7 +7,7 @@ output: pdf_document
 
 # LOAD DATA
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-result_path = "/home/david/TCC/TCC/results/"
+result_path = "/Users/david/Desktop/git-repos/TCC/results/"
 require(dplyr)
 read.al <- function(path) {
   df <- read.csv(path, sep=",",header=T, dec=".")
@@ -34,7 +34,7 @@ for (id in 1:4) {
     measurement$service_time = measurement$body / 1000000
     measurement$tag = paste("measurement-lambda", lambda, "-id", id, sep="")
     measurement$lambda = lambda
-    if (measurements == "NULL") {
+    if (typeof(measurements) == "character") {
       measurements = measurement
     } else {
       measurements = rbind(measurements, measurement)
@@ -53,7 +53,7 @@ for (id in 1:4) {
     simulation$service_time = simulation$response_time
     simulation$tag = paste("simulation-lambda", lambda, "-id", id, sep="")
     simulation$lambda = lambda
-    if (simulations == "NULL") {
+    if (typeof(simulations) == "character") {
       simulations = simulation
     } else {
       simulations = rbind(simulations, simulation)
@@ -72,7 +72,7 @@ for (id in 1:32) {
   input$response_time = input$response_time / 1000000
   input$service_time = input$body / 1000000
   input$tag = paste("input-", "-id", id, sep="")
-  if (inputs == "NULL") {
+  if (typeof(inputs) == "character") {
     inputs = input
   } else {
     inputs = rbind(inputs, input)
